@@ -34,7 +34,11 @@ func AC_Error(message string) {
 // - - Coding implementations  - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (a *ArithmeticCodec) PropagateCarry() {
-
+	var p uint
+	for p = a.ac_pointer_index - 1; a.code_buffer[p] == 0xFF; p-- {
+		a.code_buffer[p] = 0
+	}
+	a.code_buffer[p]++
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

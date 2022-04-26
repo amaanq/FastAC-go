@@ -1,8 +1,8 @@
 package FastAC
 
 type AdaptiveBitModel struct {
-	update_cycle, bits_until_update    uint
-	bit_0_prob, bit_0_count, bit_count uint
+	update_cycle, bits_until_update    uint32
+	bit_0_prob, bit_0_count, bit_count uint32
 }
 
 func NewAdaptiveBitModel() *AdaptiveBitModel {
@@ -28,7 +28,7 @@ func (a *AdaptiveBitModel) Update() {
 		}
 	}
 
-	scale := uint(0x80000000 / a.bit_count)
+	scale := uint32(0x80000000 / a.bit_count)
 	a.bit_0_prob = (a.bit_0_count * scale) >> (31 - BM__LengthShift)
 
 	a.update_cycle = (5 * a.update_cycle) >> 2

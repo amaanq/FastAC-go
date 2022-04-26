@@ -18,9 +18,9 @@ const (
 
 type ArithmeticCodec struct {
 	code_buffer, new_buffer []byte
-	ac_pointer_index        uint
-	base, value, length     uint
-	buffer_size, mode       uint
+	ac_pointer_index        uint32
+	base, value, length     uint32
+	buffer_size, mode       uint32
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -34,7 +34,7 @@ func AC_Error(message string) {
 // - - Coding implementations  - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (a *ArithmeticCodec) PropagateCarry() {
-	var p uint
+	var p uint32
 	for p = a.ac_pointer_index - 1; a.code_buffer[p] == 0xFF; p-- {
 		a.code_buffer[p] = 0
 	}
@@ -44,7 +44,7 @@ func (a *ArithmeticCodec) PropagateCarry() {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (a *ArithmeticCodec) RenormEncInterval() {
-	i := uint(0)
+	i := uint32(0)
 	for a.length < AC__MinLength {
 		a.code_buffer[a.ac_pointer_index+i] = byte(a.base >> 24)
 		a.base <<= 8
@@ -56,17 +56,17 @@ func (a *ArithmeticCodec) RenormEncInterval() {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (a *ArithmeticCodec) RenormDecInterval() {
-	i := uint(0)
+	i := uint32(0)
 	for a.length < AC__MinLength {
 		i++
-		a.value = (a.value << 8) | uint(a.code_buffer[a.ac_pointer_index+i])
+		a.value = (a.value << 8) | uint32(a.code_buffer[a.ac_pointer_index+i])
 		a.length <<= 8
 	}
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) PutBit(bit uint) {
+func (a *ArithmeticCodec) PutBit(bit uint32) {
 	a.length >>= 1
 	if bit > 0 {
 		init_base := a.base
@@ -96,7 +96,7 @@ func (a *ArithmeticCodec) GetBit() bool {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) PutBits(data, bits uint) {
+func (a *ArithmeticCodec) PutBits(data, bits uint32) {
 	init_base := a.base
 	a.length >>= bits
 	a.base += data * a.length
@@ -111,7 +111,7 @@ func (a *ArithmeticCodec) PutBits(data, bits uint) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) GetBits(bits uint) uint {
+func (a *ArithmeticCodec) GetBits(bits uint32) uint32 {
 	a.length >>= bits
 	s := a.value / a.length
 	a.value -= a.length * s
@@ -123,7 +123,7 @@ func (a *ArithmeticCodec) GetBits(bits uint) uint {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) EncodeFromStaticBitModel(bit uint, M *StaticBitModel) {
+func (a *ArithmeticCodec) EncodeFromStaticBitModel(bit uint32, M *StaticBitModel) {
 	x := M.bit0prob * (a.length >> BM__LengthShift)
 	if bit == 0 {
 		a.length = x
@@ -143,11 +143,14 @@ func (a *ArithmeticCodec) EncodeFromStaticBitModel(bit uint, M *StaticBitModel) 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) DecodeFromStaticBitModel(M *StaticBitModel) bool {
+func (a *ArithmeticCodec) DecodeFromStaticBitModel(M *StaticBitModel) uint32 {
 	x := M.bit0prob * (a.length >> BM__LengthShift)
-	bit := a.value >= x
+	bit := uint32(0)
+	if a.value >= x {
+		bit = 1
+	}
 
-	if !bit {
+	if bit == 0 {
 		a.length = x
 	} else {
 		a.value -= x
@@ -162,7 +165,7 @@ func (a *ArithmeticCodec) DecodeFromStaticBitModel(M *StaticBitModel) bool {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) EncodeFromAdaptiveBitModel(bit uint, M *AdaptiveBitModel) {
+func (a *ArithmeticCodec) EncodeFromAdaptiveBitModel(bit uint32, M *AdaptiveBitModel) {
 	x := M.bit_0_prob * (a.length >> BM__LengthShift)
 
 	if bit == 0 {
@@ -189,11 +192,14 @@ func (a *ArithmeticCodec) EncodeFromAdaptiveBitModel(bit uint, M *AdaptiveBitMod
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) DecodeFromAdaptiveBitModel(M *AdaptiveBitModel) bool {
+func (a *ArithmeticCodec) DecodeFromAdaptiveBitModel(M *AdaptiveBitModel) uint32 {
 	x := M.bit_0_prob * (a.length >> BM__LengthShift)
-	bit := a.value >= x
+	bit := uint32(0)
+	if a.value >= x {
+		bit = 1
+	}
 
-	if !bit {
+	if bit == 0 {
 		a.length = x
 		M.bit_0_count++
 	} else {
@@ -214,7 +220,7 @@ func (a *ArithmeticCodec) DecodeFromAdaptiveBitModel(M *AdaptiveBitModel) bool {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) EncodeFromStaticDataModel(data uint, M *StaticDataModel) {
+func (a *ArithmeticCodec) EncodeFromStaticDataModel(data uint32, M *StaticDataModel) {
 	x, init_base := a.base, a.base
 
 	if data == M.last_symbol {
@@ -239,7 +245,7 @@ func (a *ArithmeticCodec) EncodeFromStaticDataModel(data uint, M *StaticDataMode
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) DecodeFromStaticDataModel(M *StaticDataModel) uint {
+func (a *ArithmeticCodec) DecodeFromStaticDataModel(M *StaticDataModel) uint32 {
 	n, s, x, y := a.length, a.length, a.length, a.length
 
 	if M.distribution != nil {
@@ -294,7 +300,7 @@ func (a *ArithmeticCodec) DecodeFromStaticDataModel(M *StaticDataModel) uint {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) EncodeFromAdaptiveDataModel(data uint, M *AdaptiveDataModel) {
+func (a *ArithmeticCodec) EncodeFromAdaptiveDataModel(data uint32, M *AdaptiveDataModel) {
 	x, init_base := a.base, a.base
 
 	if data == M.last_symbol {
@@ -324,7 +330,7 @@ func (a *ArithmeticCodec) EncodeFromAdaptiveDataModel(data uint, M *AdaptiveData
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) DecodeFromAdaptiveDataModel(M *AdaptiveDataModel) uint {
+func (a *ArithmeticCodec) DecodeFromAdaptiveDataModel(M *AdaptiveDataModel) uint32 {
 	n, s, x, y := a.length, a.length, a.length, a.length
 
 	if M.distribution != nil {
@@ -386,23 +392,21 @@ func (a *ArithmeticCodec) DecodeFromAdaptiveDataModel(M *AdaptiveDataModel) uint
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // - - Other Arithmetic_Codec implementations  - - - - - - - - - - - - - - - -
 
-func NewArithmeticCodec() *ArithmeticCodec {
-	return &ArithmeticCodec{
+func NewArithmeticCodec(max_code_bytes uint32, user_buffer []byte) *ArithmeticCodec {
+	codec := &ArithmeticCodec{
 		mode:        0,
 		buffer_size: 0,
 		new_buffer:  make([]byte, 0),
 		code_buffer: make([]byte, 0),
 	}
-}
 
-func NewArithmeticCodecFromBuffer(max_code_bytes uint, user_buffer []byte) {
-	a := NewArithmeticCodec()
-	a.SetBuffer(max_code_bytes, user_buffer)
+	codec.SetBuffer(max_code_bytes, user_buffer)
+	return codec
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) SetBuffer(max_code_bytes uint, user_buffer []byte) {
+func (a *ArithmeticCodec) SetBuffer(max_code_bytes uint32, user_buffer []byte) {
 	if max_code_bytes < 16 || max_code_bytes > 0x1000000 {
 		AC_Error("invalid codec buffer size")
 	}
@@ -436,7 +440,7 @@ func (a *ArithmeticCodec) StartEncoder() {
 		AC_Error("no code buffer set")
 	}
 
-	a.mode = uint(Encoder)
+	a.mode = uint32(Encoder)
 	a.base = 0
 	a.length = AC__MaxLength
 	a.ac_pointer_index = 0 // start of code_buffer
@@ -451,10 +455,10 @@ func (a *ArithmeticCodec) StartDecoder() {
 	if a.buffer_size == 0 {
 		AC_Error("no code buffer set")
 	}
-	a.mode = uint(Decoder)
+	a.mode = uint32(Decoder)
 	a.length = AC__MaxLength
 	a.ac_pointer_index = 3 // code_buffer + 3
-	a.value = uint(a.code_buffer[0])<<24 | uint(a.code_buffer[1])<<16 | uint(a.code_buffer[2])<<8 | uint(a.code_buffer[3])
+	a.value = uint32(a.code_buffer[0])<<24 | uint32(a.code_buffer[1])<<16 | uint32(a.code_buffer[2])<<8 | uint32(a.code_buffer[3])
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -465,8 +469,8 @@ func (a *ArithmeticCodec) ReadFromFile(file *os.File) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (a *ArithmeticCodec) StopEncoder() uint {
-	if a.mode != uint(Encoder) {
+func (a *ArithmeticCodec) StopEncoder() uint32 {
+	if a.mode != uint32(Encoder) {
 		AC_Error("invalid to stop encoder")
 	}
 	a.mode = 0
@@ -487,7 +491,7 @@ func (a *ArithmeticCodec) StopEncoder() uint {
 
 	a.RenormEncInterval()
 
-	code_bytes := uint(a.ac_pointer_index)
+	code_bytes := uint32(a.ac_pointer_index)
 
 	if code_bytes > a.buffer_size {
 		AC_Error("code buffer overflow")
@@ -505,7 +509,7 @@ func (a *ArithmeticCodec) WriteToFile(file *os.File) {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (a *ArithmeticCodec) StopDecoder() {
-	if a.mode != uint(Decoder) {
+	if a.mode != uint32(Decoder) {
 		AC_Error("invalid to stop decoder")
 	}
 	a.mode = 0

@@ -1,9 +1,9 @@
 package FastAC
 
-type Mode int
+type Mode uint32
 
 const (
-	Undef Mode = iota
+	Undefined Mode = iota
 	Encoder
 	Decoder
 )

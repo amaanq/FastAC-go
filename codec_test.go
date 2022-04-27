@@ -20,7 +20,7 @@ type TestResult struct {
 func EncodeStaticBitBuffer(bitBuffer []byte, model *StaticBitModel, encoder *ArithmeticCodec) uint32 {
 	encoder.StartEncoder()
 	for k := 0; k < SimulTests; k++ {
-		encoder.EncodeFromStaticBitModel(uint32(bitBuffer[k]), model)
+		encoder.Encode_StaticBitModel(uint32(bitBuffer[k]), model)
 	}
 	return 8 * encoder.StopEncoder()
 }
@@ -30,7 +30,7 @@ func EncodeStaticBitBuffer(bitBuffer []byte, model *StaticBitModel, encoder *Ari
 func DecodeStaticBitBuffer(bitBuffer []byte, model *StaticBitModel, decoder *ArithmeticCodec) {
 	decoder.StartDecoder()
 	for k := 0; k < SimulTests; k++ {
-		bitBuffer[k] = byte(decoder.DecodeFromStaticBitModel(model))
+		bitBuffer[k] = byte(decoder.Decode_StaticBitModel(model))
 	}
 	decoder.StopDecoder()
 }
@@ -40,7 +40,7 @@ func DecodeStaticBitBuffer(bitBuffer []byte, model *StaticBitModel, decoder *Ari
 func EncodeAdaptiveBitBuffer(bitBuffer []byte, model *AdaptiveBitModel, encoder *ArithmeticCodec) uint32 {
 	encoder.StartEncoder()
 	for k := 0; k < SimulTests; k++ {
-		encoder.EncodeFromAdaptiveBitModel(uint32(bitBuffer[k]), model)
+		encoder.Encode_AdaptiveBitModel(uint32(bitBuffer[k]), model)
 	}
 	return 8 * encoder.StopEncoder()
 }
@@ -50,7 +50,7 @@ func EncodeAdaptiveBitBuffer(bitBuffer []byte, model *AdaptiveBitModel, encoder 
 func DecodeAdaptiveBitBuffer(bitBuffer []byte, model *AdaptiveBitModel, decoder *ArithmeticCodec) {
 	decoder.StartDecoder()
 	for k := 0; k < SimulTests; k++ {
-		bitBuffer[k] = byte(decoder.DecodeFromAdaptiveBitModel(model))
+		bitBuffer[k] = byte(decoder.Decode_AdaptiveBitModel(model))
 	}
 	decoder.StopDecoder()
 }
@@ -60,7 +60,7 @@ func DecodeAdaptiveBitBuffer(bitBuffer []byte, model *AdaptiveBitModel, decoder 
 func EncodeStaticDataBuffer(dataBuffer []uint16, model *StaticDataModel, encoder *ArithmeticCodec) uint32 {
 	encoder.StartEncoder()
 	for k := 0; k < SimulTests; k++ {
-		encoder.EncodeFromStaticDataModel(uint32(dataBuffer[k]), model)
+		encoder.Encode_StaticDataModel(uint32(dataBuffer[k]), model)
 	}
 	return 8 * encoder.StopEncoder()
 }
@@ -70,7 +70,7 @@ func EncodeStaticDataBuffer(dataBuffer []uint16, model *StaticDataModel, encoder
 func DecodeStaticDataBuffer(dataBuffer []uint16, model *StaticDataModel, decoder *ArithmeticCodec) {
 	decoder.StartDecoder()
 	for k := 0; k < SimulTests; k++ {
-		dataBuffer[k] = uint16(decoder.DecodeFromStaticDataModel(model))
+		dataBuffer[k] = uint16(decoder.Decode_StaticDataModel(model))
 	}
 	decoder.StopDecoder()
 }
@@ -80,7 +80,7 @@ func DecodeStaticDataBuffer(dataBuffer []uint16, model *StaticDataModel, decoder
 func EncodeAdaptiveDataBuffer(dataBuffer []uint16, model *AdaptiveDataModel, encoder *ArithmeticCodec) uint32 {
 	encoder.StartEncoder()
 	for k := 0; k < SimulTests; k++ {
-		encoder.EncodeFromAdaptiveDataModel(uint32(dataBuffer[k]), model)
+		encoder.Encode_AdaptiveDataModel(uint32(dataBuffer[k]), model)
 	}
 	return 8 * encoder.StopEncoder()
 }
@@ -90,7 +90,7 @@ func EncodeAdaptiveDataBuffer(dataBuffer []uint16, model *AdaptiveDataModel, enc
 func DecodeAdaptiveDataBuffer(dataBuffer []uint16, model *AdaptiveDataModel, decoder *ArithmeticCodec) {
 	decoder.StartDecoder()
 	for k := 0; k < SimulTests; k++ {
-		dataBuffer[k] = uint16(decoder.DecodeFromAdaptiveDataModel(model))
+		dataBuffer[k] = uint16(decoder.Decode_AdaptiveDataModel(model))
 	}
 	decoder.StopDecoder()
 }
@@ -166,9 +166,9 @@ func BinaryBenchmark(num_cycles int) {
 
 	result := new(TestResult)
 	src := initRandomBitSource()
-	codec := NewArithmeticCodec(SimulTests>>2, nil)
-	static_model := NewStaticBitModel()
-	adaptive_model := NewAdaptiveBitModel()
+	codec := initArithmeticCodec(SimulTests>>2, nil)
+	static_model := initStaticBitModel()
+	adaptive_model := initAdaptiveBitModel()
 	encoder_time, decoder_time, source_time := new(Chronometer), new(Chronometer), new(Chronometer)
 
 	var code_bits uint32
@@ -254,9 +254,9 @@ func GeneralBenchmark(data_symbols, num_cycles uint32) {
 
 	result := new(TestResult)
 	src := initRandomDataSource()
-	codec := NewArithmeticCodec(SimulTests<<1, nil)
-	static_model := NewStaticDataModel()
-	adaptive_model := NewAdaptiveDataModel(data_symbols)
+	codec := initArithmeticCodec(SimulTests<<1, nil)
+	static_model := initStaticDataModel()
+	adaptive_model := initAdaptiveDataModel(data_symbols)
 	encoder_time, decoder_time, source_time := new(Chronometer), new(Chronometer), new(Chronometer)
 
 	var code_bits uint32

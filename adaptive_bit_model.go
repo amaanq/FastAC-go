@@ -5,8 +5,8 @@ type AdaptiveBitModel struct {
 	bit_0_prob, bit_0_count, bit_count uint32
 }
 
-func NewAdaptiveBitModel() *AdaptiveBitModel {
-	a := &AdaptiveBitModel{}
+func initAdaptiveBitModel() *AdaptiveBitModel {
+	a := new(AdaptiveBitModel)
 	a.reset()
 	return a
 }
